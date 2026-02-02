@@ -1,0 +1,36 @@
+# Git branch checkout function that creates a worktree and changes into that changes directory
+# usage: cbr <BRANCH_NAME> [REMOTE]
+function cbr() {
+  local BRANCH="$1"
+  local REMOTE="${2:-origin}"
+
+  if ! check_git_exists; then
+    echo "❌ Git is not installed or not found in PATH." >&2
+    return 1
+  fi
+
+  if [[ -z "$BRANCH" ]]; then
+    echo "Usage: git-wtc-branch <BRANCH_NAME> [REMOTE]" >&2
+    echo "Available branches:"
+    git branch -a
+    echo "Please provide a branch name." >&2
+    return 1
+  fi
+
+  # Source utilities
+  source "$HOME/.local/bin/git-utils.sh"
+
+  PROCESSED_BRANCH=$(process_mr_title "$BRANCH")
+  WORKTREE="../branch-$PROCESSED_BRANCH"
+
+  echo "Creating worktree: $WORKTREE"
+  if create_worktree "$WORKTREE" "$BRANCH" "$REMOTE"; then
+    echo "✅ Branch '$BRANCH' checked out to worktree: $WORKTREE"
+    cd "$WORKTREE" || return 1
+    return 0
+  else
+    echo "❌ Failed to checkout branch '$BRANCH'" >&2
+    return 1
+  fi
+}
+

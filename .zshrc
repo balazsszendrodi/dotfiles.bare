@@ -12,12 +12,7 @@ export MANPAGER="nvim -c 'Man!' -o -"
 
 # setup autoload for custom functions that are not used that often
 fpath=(~/.config/zsh/autoload $fpath)
-autoload -Uz batdiff update-nvim pass-gen
-
-# load custom functions that are used regularly
-if [ -f ~/.zsh_functions/utils ]; then
-  source ~/.zsh_functions/utils
-fi
+autoload -Uz batdiff update-nvim pass-gen appendpath y bmr cmr
 
 appendpath "/usr/local/go/bin"
 # appendpath "/opt/glab/bin"

@@ -1,0 +1,54 @@
+# Git MR checkout function that creates a worktree and changes into that changes directory
+# usage: cmr <MR_NUMBER> [REMOTE]
+function cmr() {
+  local MR="$1"
+  local REMOTE="${2:-origin}"
+
+
+  if ! check_git_exists; then
+    echo "❌ Git is not installed or not found in PATH." >&2
+    return 1
+  fi
+
+  if ! command -v glab &>/dev/null; then
+    echo "❌ 'glab' command not found. Please install GitLab CLI." >&2
+    return 1
+  fi
+
+  if ! command -v jq &>/dev/null; then
+    echo "❌ 'jq' command not found. Please install jq." >&2
+    return 1
+  fi
+
+  if [[ -z "$MR" ]]; then
+    echo "Usage: git-wtc-mr <MR_NUMBER> [REMOTE]" >&2
+    echo "Available MRs:"
+    glab mr list
+    echo "Please provide a Merge Request number." >&2
+    return 1
+  fi
+
+
+  # Source utilities
+  source "$HOME/.local/bin/git-utils.sh"
+
+
+  echo "Fetching MR #$MR info..."
+  local MR_INFO BRANCH TITLE PROCESSED_TITLE WORKTREE
+  MR_INFO=$(glab mr view "$MR" -F json)
+  BRANCH=$(echo "$MR_INFO" | jq -r '.source_branch')
+  TITLE=$(echo "$MR_INFO" | jq -r '.title')
+  PROCESSED_TITLE=$(process_mr_title "$TITLE")
+  WORKTREE="../mr-$MR-$PROCESSED_TITLE"
+
+  echo "Creating worktree: $WORKTREE"
+  if create_worktree "$WORKTREE" "$BRANCH" "$REMOTE"; then
+    echo "✅ MR #$MR checked out to worktree: $WORKTREE"
+    cd "$WORKTREE" || return 1
+    return 0
+  else
+    echo "❌ Failed to checkout MR #$MR" >&2
+    return 1
+  fi
+}
+
